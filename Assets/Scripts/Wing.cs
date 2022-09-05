@@ -24,6 +24,7 @@ public class Wing : MonoBehaviour
     public float MaxTrailFlapAngle;
     public float MaxLeadFlapAngle;
     public float StallAngle { get; private set; } = 15f * Mathf.Deg2Rad;
+    public GameObject FlapPrefab;
 
     // PRIVATE Calculated Wing Parameters
     private float WingThickness = 0.1f; // fraction of chord length
@@ -36,6 +37,8 @@ public class Wing : MonoBehaviour
     private Mesh LeadFlapMesh;
     private float switchLeftRight;
     private Quaternion rotationDatum;
+    private GameObject TrailFlap;
+    private GameObject LeadFlap;
 
     public bool _debug;
 
@@ -48,7 +51,7 @@ public class Wing : MonoBehaviour
         rotationDatum = transform.localRotation;
         
         // Build Mesh
-        WingMesh = new Mesh();
+        WingMesh = new();
 
         switchLeftRight = Mirror ? -1f : 1f;
         Vector3 chordShift = Vector3.forward * RootChord * 0.5f;
@@ -60,7 +63,7 @@ public class Wing : MonoBehaviour
         {
             // 4 Sided Wing
             Vector3 trailingTip = leadingTip + new Vector3(0f, 0f, -TipChord);
-            WingMesh.vertices = new Vector3[] { Vector3.zero + chordShift, leadingTip + chordShift, trailingTip + chordShift, trailingRoot + chordShift };
+            WingMesh.vertices = new Vector3[] { chordShift, leadingTip + chordShift, trailingTip + chordShift, trailingRoot + chordShift };
             WingMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             PlanformArea = (Vector3.Cross(leadingTip, trailingTip).magnitude + Vector3.Cross(trailingTip, trailingRoot).magnitude) / 2f;
             FrontalArea = (RootChord * WingThickness + TipChord * WingThickness) * WingSpan * 0.5f;
@@ -69,7 +72,7 @@ public class Wing : MonoBehaviour
         else
         {
             // Triangular Wing
-            WingMesh.vertices = new Vector3[] { Vector3.zero + chordShift, leadingTip + chordShift, trailingRoot + chordShift };
+            WingMesh.vertices = new Vector3[] { chordShift, leadingTip + chordShift, trailingRoot + chordShift };
             WingMesh.triangles = new int[] { 0, 1, 2 };
             PlanformArea = Vector3.Cross(leadingTip, trailingRoot).magnitude / 2f;
             FrontalArea = (RootChord * WingThickness + TipChord * WingThickness) * WingSpan * 0.5f;
@@ -84,19 +87,24 @@ public class Wing : MonoBehaviour
         if (TrailFlapChord > 0f)
         {
             // Add trailing edge flap
-            TrailFlapMesh.vertices = new Vector3[] { WingMesh.vertices[^1], WingMesh.vertices[^2], WingMesh.vertices[^2] + new Vector3(0f, 0f, -TrailFlapChord), WingMesh.vertices[^1] + new Vector3(0f, 0f, -TrailFlapChord) };
+            TrailFlapMesh = new();
+            TrailFlapMesh.vertices = new Vector3[] { Vector3.zero, WingMesh.vertices[^2] - WingMesh.vertices[^1], WingMesh.vertices[^2] - WingMesh.vertices[^1] + new Vector3(0f, 0f, -TrailFlapChord), new Vector3(0f, 0f, -TrailFlapChord) };
             TrailFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             PlanformArea += TrailFlapChord * WingSpan;
+            TrailFlap = Instantiate(FlapPrefab, transform.position + WingMesh.vertices[^1], transform.parent.rotation, transform);
+            TrailFlap.GetComponent<MeshFilter>().mesh = TrailFlapMesh;
         }
 
         if (LeadFlapChord > 0f)
         {
             // Add leading edge flap
-            TrailFlapMesh.vertices = new Vector3[] { WingMesh.vertices[0] + new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] + new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1], WingMesh.vertices[0] };
-            TrailFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
+            LeadFlapMesh = new();
+            LeadFlapMesh.vertices = new Vector3[] { new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0] + new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0], Vector3.zero };
+            LeadFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             PlanformArea += LeadFlapChord * WingSpan;
+            LeadFlap = Instantiate(FlapPrefab, transform.position + WingMesh.vertices[0], transform.parent.rotation, transform);
+            LeadFlap.GetComponent<MeshFilter>().mesh = LeadFlapMesh;
         }
-
 
         if (_debug)
         {

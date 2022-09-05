@@ -289,6 +289,14 @@ PrefabInstance:
       propertyPath: SweepAngle
       value: -30
       objectReference: {fileID: 0}
+    - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
+      propertyPath: LeadFlapChord
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
+      propertyPath: TrailFlapChord
+      value: 0.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
 --- !u!1 &425543866 stripped
