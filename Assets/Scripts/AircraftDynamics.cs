@@ -7,7 +7,7 @@ public class AircraftDynamics : MonoBehaviour
     public Rigidbody rb;
     public FlightControlInput fcs;
 
-    public List<GameObject> Wings;
+    private List<GameObject> Wings;
 
     private float Length = 8f;
     private float WingSpan = 7f;
@@ -20,8 +20,14 @@ public class AircraftDynamics : MonoBehaviour
 
     private void Start()
     {
+        Wings = new();
+        foreach (Wing wing in GetComponentsInChildren<Wing>()) // Get all wings attached to this aircraft
+        {
+            Wings.Add(wing.gameObject);
+        }
+
         rb.inertiaTensor = new Vector3((Height * Height + Length * Length) * rb.mass / 12f, (WingSpan * WingSpan + Length * Length) * rb.mass / 12f, (Height * Height + WingSpan * WingSpan) * rb.mass / 12f);
-        rb.velocity = new Vector3(0f, 0f, 10f);
+        rb.velocity = new Vector3(0f, 0f, 100f);
 
         for (int i = 0; i < Wings.Count; i++)
         {
@@ -37,17 +43,36 @@ public class AircraftDynamics : MonoBehaviour
                 RightMaxMomentArm = rightMomentArm;
             }
         }
-        Debug.Log("Max moment arms: forward = " + BackMaxMomentArm + ", right = " + RightMaxMomentArm);
     }
 
     private void FixedUpdate()
     {
-        Debug.Log("Pitch = " + fcs.pitchInceptor + ", Roll = " + fcs.rollInceptor + ", Yaw = " + fcs.yawInceptor);
+        //Debug.Log("Pitch = " + fcs.pitchInceptor + ", Roll = " + fcs.rollInceptor + ", Yaw = " + fcs.yawInceptor);
 
         for (int i = 0; i < Wings.Count; i++)
         {
             Wing wing = Wings[i].GetComponent<Wing>();
-            wing.Operate((fcs.pitchInceptor * Vector3.Dot(wing.transform.localPosition, Vector3.back) / BackMaxMomentArm + fcs.rollInceptor * Vector3.Dot(wing.transform.localPosition, Vector3.right) / RightMaxMomentArm) * wing.MaxRotation, 0f);
+
+            float inverterPitch = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.back) > 0f ? 1f : -1f;
+            float inverterRoll = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.right) > 0f ? 1f : -1f;
+            float inverterYaw = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.back) > 0f ? 1f : -1f;
+            Debug.Log(wing.transform.localPosition + wing.CentreOfPressure);
+
+            float resultantPitchInput = fcs.pitchInceptor * inverterPitch;
+            float resultantRollInput = fcs.rollInceptor * inverterRoll;
+            float resultantYawInput = fcs.yawInceptor * inverterYaw;
+
+            float InputSum = resultantPitchInput + resultantRollInput + resultantYawInput;
+            wing.Operate(InputSum, InputSum, 0f);
+        }
+    }
+
+    private void Update()
+    {
+        for (int i = 0; i < Wings.Count; i++)
+        {
+            Wing wing = Wings[i].GetComponent<Wing>();
+            wing.DebugForces();
         }
     }
 }
