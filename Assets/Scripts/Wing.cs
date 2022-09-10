@@ -26,6 +26,9 @@ public class Wing : MonoBehaviour
     public float StallAngle { get; private set; } = 15f * Mathf.Deg2Rad;
     public GameObject FlapPrefab;
     public Vector3 CentreOfPressure { get; private set; }
+    public float PitchContribution;
+    public float RollContribution;
+    public float YawContribution;
 
     // PRIVATE Calculated Wing Parameters
     private float WingThickness = 0.1f; // fraction of chord length
@@ -98,7 +101,7 @@ public class Wing : MonoBehaviour
             TrailFlapMesh.vertices = new Vector3[] { Vector3.zero, WingMesh.vertices[^2] - WingMesh.vertices[^1], WingMesh.vertices[^2] - WingMesh.vertices[^1] + new Vector3(0f, 0f, -TrailFlapChord), new Vector3(0f, 0f, -TrailFlapChord) };
             TrailFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             PlanformArea += TrailFlapChord * WingSpan; // Add control surface to wing area
-            TrailFlap = Instantiate(FlapPrefab, transform.position + WingMesh.vertices[^1], transform.parent.rotation, transform);
+            TrailFlap = Instantiate(FlapPrefab, transform.TransformPoint(WingMesh.vertices[^1]), transform.rotation, transform);
             TrailFlap.GetComponent<MeshFilter>().mesh = TrailFlapMesh;
             TrailFlapRotationDatum = TrailFlap.transform.localRotation;
         }
@@ -110,7 +113,7 @@ public class Wing : MonoBehaviour
             LeadFlapMesh.vertices = new Vector3[] { new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0] + new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0], Vector3.zero };
             LeadFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             PlanformArea += LeadFlapChord * WingSpan; // Add control surface to wing area
-            LeadFlap = Instantiate(FlapPrefab, transform.position + WingMesh.vertices[0], transform.parent.rotation, transform);
+            LeadFlap = Instantiate(FlapPrefab, transform.TransformPoint(WingMesh.vertices[0]), transform.rotation, transform);
             LeadFlap.GetComponent<MeshFilter>().mesh = LeadFlapMesh;
             LeadFlapRotationDatum = LeadFlap.transform.localRotation;
         }
@@ -128,23 +131,23 @@ public class Wing : MonoBehaviour
         }
     }
 
-    public void Operate(float wingControl, float trailFlapControl, float leadFlapControl) //incidenceControl and zeroLiftControl are in degrees
+    public void Operate(float wingControl, float trailFlapControl, float leadFlapControl, Transform playerTransform) //incidenceControl and zeroLiftControl are in degrees
     {
         // -- Update Control Surface Orientation --
         // Wing
         //Quaternion rotation = new(Mathf.Sin(incidenceControl / 2f), 0f, 0f, Mathf.Cos(incidenceControl / 2f));
-        Quaternion rotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * wingControl * MaxRotation, -MaxRotation, MaxRotation), switchLeftRight * Vector3.right); // rotation vector points from root to tip and is normal to chordline
+        Quaternion rotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * wingControl * MaxRotation, -MaxRotation, MaxRotation), switchLeftRight * playerTransform.InverseTransformVector(transform.right)); // rotation vector points from root to tip and is normal to chordline
         transform.localRotation = rotation * rotationDatum; // this is doing q*p*q^-1
         
         // Flaps
         if (TrailFlap != null)
         {
-            Quaternion trailFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * trailFlapControl * MaxTrailFlapAngle, -MaxTrailFlapAngle, MaxTrailFlapAngle), (WingMesh.vertices[^2] - WingMesh.vertices[^1]));
+            Quaternion trailFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * trailFlapControl * MaxTrailFlapAngle, -MaxTrailFlapAngle, MaxTrailFlapAngle), WingMesh.vertices[^2] - WingMesh.vertices[^1]);
             TrailFlap.transform.localRotation = trailFlapRotation * TrailFlapRotationDatum;
         }
         if (LeadFlap != null)
         {
-            Quaternion leadFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * leadFlapControl * MaxLeadFlapAngle, -MaxLeadFlapAngle, MaxLeadFlapAngle), (WingMesh.vertices[1] - WingMesh.vertices[0]));
+            Quaternion leadFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * leadFlapControl * MaxLeadFlapAngle, -MaxLeadFlapAngle, MaxLeadFlapAngle), WingMesh.vertices[1] - WingMesh.vertices[0]);
             LeadFlap.transform.localRotation = leadFlapRotation * LeadFlapRotationDatum;
         }
 
@@ -165,7 +168,7 @@ public class Wing : MonoBehaviour
         {
             // Stalled
             Cl = 0f;
-            Cd = 9f * Mathf.Abs(Cl) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(StallAngle + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
+            Cd = 9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(StallAngle + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
         }
         else
         {
@@ -175,11 +178,11 @@ public class Wing : MonoBehaviour
         }
 
         // Lift
-        Vector3 liftDir = new(0f, Mathf.Cos(angleOfAttack), Mathf.Sin(angleOfAttack));
+        Vector3 liftDir = switchLeftRight * -Vector3.Cross(-localVelocity, WingMesh.vertices[1] - WingMesh.vertices[0]).normalized;
         Lift = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * PlanformArea * Cl * liftDir;
 
         // Drag
-        Vector3 dragDir = new(0f, Mathf.Sin(angleOfAttack), -Mathf.Cos(angleOfAttack));
+        Vector3 dragDir = -localVelocity.normalized;
         Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * FrontalArea * Cd * dragDir; // Should this act perpendicular to leading edge? Don't think so
 
 
@@ -193,12 +196,11 @@ public class Wing : MonoBehaviour
         {
             //Debug.Log("Local Forward = " + localForward);
             //Debug.Log("Lifting Velocity = " + liftingVelocity);
-            //Debug.Log("Angle of Attack = " + angleOfAttack);
+            //Debug.Log("Angle of Attack = " + angleOfAttack * Mathf.Rad2Deg);
             //Debug.Log("Cl = " + Cl + ", Cd = " + Cd);
-            //Debug.Log("Lift = " + lift + ", Drag = " + drag);
+            //Debug.Log("Lift = " + Lift + ", Drag = " + Drag);
             //Debug.Log("Lift dir = " + liftDir + ", Drag dir = " + dragDir);
             //Debug.DrawRay(transform.TransformPoint(WingMesh.bounds.center), transform.TransformDirection(Vector3.up));
-            //Debug.Log("Pitch allocation = " + Vector3.Dot(Vector3.right, transform.parent.InverseTransformVector(transform.right)) + ", Yaw allocation = " + Vector3.Dot(Vector3.up, transform.parent.InverseTransformVector(transform.right)) + ", Vector = " + transform.parent.InverseTransformVector(transform.right));
             //Debug.Log(rotation + ", " + (rotation * rotationDatum * Quaternion.Inverse(rotation)));
             //Debug.Log(leadFlapControl);
             //Debug.Log(Mathf.Abs(angleOfAttack - leadFlapControl * Mathf.Deg2Rad / 2f) * Mathf.Rad2Deg);

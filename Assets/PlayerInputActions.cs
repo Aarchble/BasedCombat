@@ -53,6 +53,15 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Throttle"",
+                    ""type"": ""Value"",
+                    ""id"": ""9c3882b0-2cf7-4e5a-a7c6-3a752543094d"",
+                    ""expectedControlType"": ""Analog"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -110,6 +119,39 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                     ""action"": ""Yaw"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""1D Axis"",
+                    ""id"": ""36a7a5f0-44c4-4db9-a3ef-ac6bf30a376c"",
+                    ""path"": ""1DAxis"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Throttle"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""negative"",
+                    ""id"": ""909f15ee-ec7b-4038-a477-fb7969fe3399"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Throttle"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""8023cb4e-b59e-45b5-992b-2cf65458d511"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Throttle"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
@@ -121,6 +163,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
         m_FlightControls_Pitch = m_FlightControls.FindAction("Pitch", throwIfNotFound: true);
         m_FlightControls_Roll = m_FlightControls.FindAction("Roll", throwIfNotFound: true);
         m_FlightControls_Yaw = m_FlightControls.FindAction("Yaw", throwIfNotFound: true);
+        m_FlightControls_Throttle = m_FlightControls.FindAction("Throttle", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -183,6 +226,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
     private readonly InputAction m_FlightControls_Pitch;
     private readonly InputAction m_FlightControls_Roll;
     private readonly InputAction m_FlightControls_Yaw;
+    private readonly InputAction m_FlightControls_Throttle;
     public struct FlightControlsActions
     {
         private @PlayerInputActions m_Wrapper;
@@ -190,6 +234,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
         public InputAction @Pitch => m_Wrapper.m_FlightControls_Pitch;
         public InputAction @Roll => m_Wrapper.m_FlightControls_Roll;
         public InputAction @Yaw => m_Wrapper.m_FlightControls_Yaw;
+        public InputAction @Throttle => m_Wrapper.m_FlightControls_Throttle;
         public InputActionMap Get() { return m_Wrapper.m_FlightControls; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -208,6 +253,9 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                 @Yaw.started -= m_Wrapper.m_FlightControlsActionsCallbackInterface.OnYaw;
                 @Yaw.performed -= m_Wrapper.m_FlightControlsActionsCallbackInterface.OnYaw;
                 @Yaw.canceled -= m_Wrapper.m_FlightControlsActionsCallbackInterface.OnYaw;
+                @Throttle.started -= m_Wrapper.m_FlightControlsActionsCallbackInterface.OnThrottle;
+                @Throttle.performed -= m_Wrapper.m_FlightControlsActionsCallbackInterface.OnThrottle;
+                @Throttle.canceled -= m_Wrapper.m_FlightControlsActionsCallbackInterface.OnThrottle;
             }
             m_Wrapper.m_FlightControlsActionsCallbackInterface = instance;
             if (instance != null)
@@ -221,6 +269,9 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                 @Yaw.started += instance.OnYaw;
                 @Yaw.performed += instance.OnYaw;
                 @Yaw.canceled += instance.OnYaw;
+                @Throttle.started += instance.OnThrottle;
+                @Throttle.performed += instance.OnThrottle;
+                @Throttle.canceled += instance.OnThrottle;
             }
         }
     }
@@ -230,5 +281,6 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
         void OnPitch(InputAction.CallbackContext context);
         void OnRoll(InputAction.CallbackContext context);
         void OnYaw(InputAction.CallbackContext context);
+        void OnThrottle(InputAction.CallbackContext context);
     }
 }

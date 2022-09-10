@@ -5,9 +5,10 @@ using UnityEngine.InputSystem;
 
 public class FlightControlInput : MonoBehaviour
 {
-    public float pitchInceptor { get; private set; }
-    public float rollInceptor { get; private set; }
-    public float yawInceptor { get; private set; }
+    public float PitchInceptor { get; private set; } = 0f;
+    public float RollInceptor { get; private set; } = 0f;
+    public float YawInceptor { get; private set; } = 0f;
+    public float ThrottleInceptor { get; private set; } = 0f;
 
     PlayerInputActions _input;
 
@@ -17,42 +18,52 @@ public class FlightControlInput : MonoBehaviour
         _input.FlightControls.Enable();
 
         _input.FlightControls.Pitch.performed += SetPitch;
-        _input.FlightControls.Pitch.canceled += SetPitch;
 
         _input.FlightControls.Roll.performed += SetRoll;
-        _input.FlightControls.Roll.canceled += SetRoll;
 
         _input.FlightControls.Yaw.performed += SetYaw;
-        _input.FlightControls.Yaw.canceled += SetYaw;
+
+        _input.FlightControls.Throttle.performed += SetThrottle;
+        _input.FlightControls.Throttle.canceled += ZeroThrottle;
     }
 
     private void OnDisable()
     {
         _input.FlightControls.Pitch.performed -= SetPitch;
-        _input.FlightControls.Pitch.canceled -= SetPitch;
 
         _input.FlightControls.Roll.performed -= SetRoll;
-        _input.FlightControls.Roll.canceled -= SetRoll;
 
         _input.FlightControls.Yaw.performed -= SetYaw;
-        _input.FlightControls.Yaw.canceled -= SetYaw;
+
+        _input.FlightControls.Throttle.performed -= SetThrottle;
+        _input.FlightControls.Throttle.canceled -= ZeroThrottle;
 
         _input.FlightControls.Disable();
     }
 
     private void SetPitch(InputAction.CallbackContext context)
     {
-        pitchInceptor = context.ReadValue<float>();
+        PitchInceptor = context.ReadValue<float>();
     }
 
     private void SetRoll(InputAction.CallbackContext context)
     {
-        rollInceptor = context.ReadValue<float>();
+        RollInceptor = context.ReadValue<float>();
     }
 
     private void SetYaw(InputAction.CallbackContext context)
     {
-        yawInceptor = context.ReadValue<float>();
+        YawInceptor = context.ReadValue<float>();
+    }
+
+    private void SetThrottle(InputAction.CallbackContext context)
+    {
+        ThrottleInceptor = context.ReadValue<float>();
+    }
+
+    private void ZeroThrottle(InputAction.CallbackContext context)
+    {
+        ThrottleInceptor = 0f;
     }
 
 }
