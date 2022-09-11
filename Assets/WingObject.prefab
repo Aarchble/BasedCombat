@@ -52,12 +52,16 @@ MonoBehaviour:
   TipChord: 1
   SweepAngle: 0
   Mirror: 0
+  PivotPosition: 0.5
   TrailFlapChord: 0
   LeadFlapChord: 0
   MaxRotation: 0
   MaxTrailFlapAngle: 0
   MaxLeadFlapAngle: 0
   FlapPrefab: {fileID: 7195837417748725931, guid: 4656a5095cef40d4c942ca07b8c73822, type: 3}
+  PitchContribution: 0
+  RollContribution: 0
+  YawContribution: 0
   _debug: 0
 --- !u!33 &172795884441632396
 MeshFilter:

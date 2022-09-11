@@ -16,6 +16,7 @@ public class Wing : MonoBehaviour
     public float TipChord;
     public float SweepAngle;
     public bool Mirror;
+    public float PivotPosition = 0.5f;
     public float TrailFlapChord;
     public float LeadFlapChord;
 
@@ -53,10 +54,11 @@ public class Wing : MonoBehaviour
 
     public bool _debug;
 
-    private void Start()
+    private void Awake()
     {
         dynamics = GetComponentInParent<AircraftDynamics>();
         meshFilter = GetComponent<MeshFilter>();
+
 
         // -- Wing --
         rotationDatum = transform.localRotation;
@@ -65,7 +67,7 @@ public class Wing : MonoBehaviour
         WingMesh = new();
 
         switchLeftRight = Mirror ? -1f : 1f;
-        Vector3 chordShift = Vector3.forward * RootChord * 0.5f;
+        Vector3 chordShift = Vector3.forward * RootChord * PivotPosition;
 
         Vector3 leadingTip = new Vector3(switchLeftRight * WingSpan, 0f, -WingSpan * Mathf.Tan(SweepAngle * Mathf.Deg2Rad));
         Vector3 trailingRoot = new Vector3(0f, 0f, -RootChord);
@@ -130,6 +132,18 @@ public class Wing : MonoBehaviour
             //Debug.Log(trailingRoot);
         }
     }
+
+    private void Start()
+    {
+        // -- Sub-Wing --
+        if (transform.parent.TryGetComponent(out Wing parentWing))
+        {
+            Debug.Log(parentWing);
+            Vector3 parentTip = parentWing.WingMesh.vertices[1];
+            transform.localPosition = new Vector3(parentTip.x, 0f, parentTip.z);
+        }
+    }
+
 
     public void Operate(float wingControl, float trailFlapControl, float leadFlapControl, Transform playerTransform) //incidenceControl and zeroLiftControl are in degrees
     {
@@ -196,7 +210,7 @@ public class Wing : MonoBehaviour
         {
             //Debug.Log("Local Forward = " + localForward);
             //Debug.Log("Lifting Velocity = " + liftingVelocity);
-            //Debug.Log("Angle of Attack = " + angleOfAttack * Mathf.Rad2Deg);
+            Debug.Log("Angle of Attack = " + angleOfAttack * Mathf.Rad2Deg);
             //Debug.Log("Cl = " + Cl + ", Cd = " + Cd);
             //Debug.Log("Lift = " + Lift + ", Drag = " + Drag);
             //Debug.Log("Lift dir = " + liftDir + ", Drag dir = " + dragDir);
