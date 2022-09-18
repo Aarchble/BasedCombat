@@ -35,6 +35,7 @@ public class Wing : MonoBehaviour
     private float WingThickness = 0.1f; // fraction of chord length
     private float PlanformArea;
     private float FrontalArea;
+    private float AspectRatio;
     private float Volume;
     private Mesh WingMesh;
     private Mesh TrailFlapMesh;
@@ -92,6 +93,7 @@ public class Wing : MonoBehaviour
             Volume = WingSpan * (RootChord * TipChord * WingThickness + TipChord * RootChord * WingThickness + 2f * (TipChord * TipChord * WingThickness + RootChord * RootChord * WingThickness)) / 6f;
         }
 
+        AspectRatio = Mathf.Abs(SweepAngle) > 0f ? 4f / Mathf.Tan(SweepAngle * Mathf.Deg2Rad) : 8f * WingSpan / (RootChord + TipChord); // Delta wing aspect ratio if swept, otherwise regular aspect ratio with average chord
         meshFilter.mesh = WingMesh;
 
 
@@ -138,10 +140,36 @@ public class Wing : MonoBehaviour
         // -- Sub-Wing --
         if (transform.parent.TryGetComponent(out Wing parentWing))
         {
-            Debug.Log(parentWing);
             Vector3 parentTip = parentWing.WingMesh.vertices[1];
             transform.localPosition = new Vector3(parentTip.x, 0f, parentTip.z);
         }
+    }
+
+
+    private float[] LiftCoefficient(float angleOfAttack, float modAttack)
+    {
+        float liftCurveMagnitude = Mathf.Sqrt(Mathf.Pow(1.5f, 2f) + Mathf.Pow(StallAngle, 2f)); // 1.5 at 15 degrees
+
+        float liftCurveGradient = (-SweepAngle / 1250f + 0.1f) * Mathf.Rad2Deg;
+        float stallAngle = liftCurveMagnitude * Mathf.Cos(Mathf.Atan(liftCurveGradient)); // Modified by vortex lift
+
+        float Cl;
+        float Cd;
+        float Clmax = (stallAngle + modAttack) * liftCurveGradient;
+        if (Mathf.Abs(angleOfAttack) > stallAngle)
+        {
+            // Stalled
+            Cl = 0f;
+            Cd = 9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(stallAngle + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
+        }
+        else
+        {
+            // Nominal
+            Cl = (angleOfAttack + modAttack) * liftCurveGradient;
+            Cd = 9f * Mathf.Abs(Cl) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
+        }
+
+        return new float[] { Cl, Cd };
     }
 
 
@@ -174,30 +202,15 @@ public class Wing : MonoBehaviour
         float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
         float modAttack = -ZeroLiftAngle * Mathf.Deg2Rad - trailFlapControl * MaxTrailFlapAngle * Mathf.Deg2Rad / 2f; // Flapped control is half to match trends from graphs
 
-        float Cl;
-        float Cd;
-        float Clmax = 18f / Mathf.PI * (StallAngle + modAttack);
-
-        if (Mathf.Abs(angleOfAttack) > StallAngle)
-        {
-            // Stalled
-            Cl = 0f;
-            Cd = 9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(StallAngle + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
-        }
-        else
-        {
-            // Nominal
-            Cl = 18f / Mathf.PI * (angleOfAttack + modAttack);
-            Cd = 9f * Mathf.Abs(Cl) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
-        }
+        float[] ClCd = LiftCoefficient(angleOfAttack, modAttack); // Lift : [0], Drag : [1]
 
         // Lift
         Vector3 liftDir = switchLeftRight * -Vector3.Cross(-localVelocity, WingMesh.vertices[1] - WingMesh.vertices[0]).normalized;
-        Lift = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * PlanformArea * Cl * liftDir;
+        Lift = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * PlanformArea * ClCd[0] * liftDir;
 
         // Drag
         Vector3 dragDir = -localVelocity.normalized;
-        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * FrontalArea * Cd * dragDir; // Should this act perpendicular to leading edge? Don't think so
+        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * FrontalArea * ClCd[1] * dragDir; // Should this act perpendicular to leading edge? Don't think so
 
 
         // -- Apply Force --
@@ -210,8 +223,8 @@ public class Wing : MonoBehaviour
         {
             //Debug.Log("Local Forward = " + localForward);
             //Debug.Log("Lifting Velocity = " + liftingVelocity);
-            Debug.Log("Angle of Attack = " + angleOfAttack * Mathf.Rad2Deg);
-            //Debug.Log("Cl = " + Cl + ", Cd = " + Cd);
+            //Debug.Log("Angle of Attack = " + angleOfAttack * Mathf.Rad2Deg);
+            Debug.Log("Cl = " + ClCd[0] + ", Cd = " + ClCd[1]);
             //Debug.Log("Lift = " + Lift + ", Drag = " + Drag);
             //Debug.Log("Lift dir = " + liftDir + ", Drag dir = " + dragDir);
             //Debug.DrawRay(transform.TransformPoint(WingMesh.bounds.center), transform.TransformDirection(Vector3.up));
@@ -235,15 +248,15 @@ public class Wing : MonoBehaviour
         }
     }
 
-    public float GetAngleOfAttack()
-    {
-        // Calculate Dynamics
-        Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
+    //public float GetAngleOfAttack()
+    //{
+    //    // Calculate Dynamics
+    //    Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
 
-        Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetRelativePointVelocity(transform.localPosition)); // Velocity of the parent's rigidbody at this position
-        Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
-        float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
+    //    Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetRelativePointVelocity(transform.localPosition)); // Velocity of the parent's rigidbody at this position
+    //    Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
+    //    float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
 
-        return angleOfAttack;
-    }
+    //    return angleOfAttack;
+    //}
 }

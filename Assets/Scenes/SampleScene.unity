@@ -399,11 +399,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: MaxRotation
-      value: 10
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: RollContribution
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: PitchContribution
@@ -688,7 +688,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: _debug
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: TipChord
@@ -937,11 +937,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: MaxRotation
-      value: 10
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: RollContribution
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: PitchContribution
