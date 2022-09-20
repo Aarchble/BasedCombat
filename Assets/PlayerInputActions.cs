@@ -32,7 +32,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                     ""type"": ""Value"",
                     ""id"": ""e24ef855-35be-42d1-8513-60338b7ae5f6"",
                     ""expectedControlType"": ""Axis"",
-                    ""processors"": ""Invert"",
+                    ""processors"": ""Invert,AxisDeadzone"",
                     ""interactions"": """",
                     ""initialStateCheck"": true
                 },
@@ -41,7 +41,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                     ""type"": ""Value"",
                     ""id"": ""42dab131-e057-4635-90be-e8469333f8e0"",
                     ""expectedControlType"": ""Axis"",
-                    ""processors"": """",
+                    ""processors"": ""AxisDeadzone"",
                     ""interactions"": """",
                     ""initialStateCheck"": true
                 },
@@ -50,7 +50,7 @@ public partial class @PlayerInputActions : IInputActionCollection2, IDisposable
                     ""type"": ""Value"",
                     ""id"": ""3332e8e2-99d5-4ab1-bf0a-3cb6284d4546"",
                     ""expectedControlType"": ""Axis"",
-                    ""processors"": """",
+                    ""processors"": ""AxisDeadzone"",
                     ""interactions"": """",
                     ""initialStateCheck"": true
                 },

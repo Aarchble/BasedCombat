@@ -15,7 +15,6 @@ public class AircraftDynamics : MonoBehaviour
     private float Throttle = 0f;
 
     public float Density = 1.225f;
-    public float _deflection = 0f;
     public float BackMaxMomentArm { get; private set; } = 0f;
     public float RightMaxMomentArm { get; private set; } = 0f;
 
@@ -46,6 +45,8 @@ public class AircraftDynamics : MonoBehaviour
                 RightMaxMomentArm = rightMomentArm;
             }
         }
+
+        rb.centerOfMass = Vector3.zero;
     }
 
     private void FixedUpdate()
@@ -72,6 +73,10 @@ public class AircraftDynamics : MonoBehaviour
             float resultantYawInput = fcs.YawInceptor * wing.YawContribution * inverterYaw; //Vector3.Dot(Vector3.up, transform.InverseTransformVector(wing.transform.right))
 
             float InputSum = resultantPitchInput + resultantRollInput + resultantYawInput;
+
+            float antiStall = Mathf.Abs(wing.MaxRotation) > 0f ? -wing.GetAngleOfAttack() / wing.MaxRotation : 0f;
+            float antiStallFlap = Mathf.Abs(wing.MaxTrailFlapAngle) > 0f ? -wing.GetAngleOfAttack() / wing.MaxTrailFlapAngle : 0f;
+
             wing.Operate(InputSum, InputSum, 0f, transform);
         }
 
@@ -86,5 +91,10 @@ public class AircraftDynamics : MonoBehaviour
             Wing wing = Wings[i].GetComponent<Wing>();
             wing.DebugForces();
         }
+
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.up, Color.white);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.down, Color.white);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.left, Color.white);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.right, Color.white);
     }
 }

@@ -179,6 +179,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
+      propertyPath: _debug
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: TipChord
       value: 0.2
       objectReference: {fileID: 0}
@@ -379,7 +383,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: _debug
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: TipChord
@@ -530,6 +534,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: Mirror
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
+      propertyPath: _debug
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
@@ -688,7 +696,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: _debug
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: TipChord
@@ -917,7 +925,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: _debug
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: TipChord
@@ -1129,7 +1137,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: _debug
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: TipChord
@@ -1302,7 +1310,6 @@ MonoBehaviour:
   rb: {fileID: 1854147746}
   fcs: {fileID: 1854147748}
   Density: 1.225
-  _deflection: 0
   _velocity: 0
 --- !u!54 &1854147746
 Rigidbody:

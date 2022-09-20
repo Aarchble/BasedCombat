@@ -160,13 +160,13 @@ public class Wing : MonoBehaviour
         {
             // Stalled
             Cl = 0f;
-            Cd = 9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(stallAngle + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
+            Cd = Mathf.Clamp(9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f), 0f, 2f);
         }
         else
         {
             // Nominal
             Cl = (angleOfAttack + modAttack) * liftCurveGradient;
-            Cd = 9f * Mathf.Abs(Cl) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f);
+            Cd = Mathf.Clamp(9f * Mathf.Abs(Cl) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f), 0f, 2f);
         }
 
         return new float[] { Cl, Cd };
@@ -195,9 +195,12 @@ public class Wing : MonoBehaviour
 
 
         // -- Calculate Dynamics --
+        float trailFlapCoP = MaxTrailFlapAngle > 0f ? 0.25f * trailFlapControl : 0f;
+        CentreOfPressure = CalculateCoP(0.25f + trailFlapCoP);
+
         Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
 
-        Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetRelativePointVelocity(transform.localPosition)); // Velocity of the parent's rigidbody at this position
+        Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetRelativePointVelocity(transform.localPosition + CentreOfPressure)); // Velocity of the parent's rigidbody at this position
         Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
         float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
         float modAttack = -ZeroLiftAngle * Mathf.Deg2Rad - trailFlapControl * MaxTrailFlapAngle * Mathf.Deg2Rad / 2f; // Flapped control is half to match trends from graphs
@@ -210,11 +213,10 @@ public class Wing : MonoBehaviour
 
         // Drag
         Vector3 dragDir = -localVelocity.normalized;
-        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * FrontalArea * ClCd[1] * dragDir; // Should this act perpendicular to leading edge? Don't think so
+        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * (FrontalArea + PlanformArea * Mathf.Sin(angleOfAttack)) * ClCd[1] * dragDir; // Should this act perpendicular to leading edge? Don't think so
 
 
         // -- Apply Force --
-        CentreOfPressure = CalculateCoP(0.25f);
         dynamics.rb.AddForceAtPosition(transform.TransformVector(Lift + Drag), transform.TransformPoint(CentreOfPressure)); // drag is causing the simulation to *depart*
 
 
@@ -243,20 +245,21 @@ public class Wing : MonoBehaviour
     {
         if (_debug)
         {
-            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Lift), Color.green);
-            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Drag), Color.red);
+            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Lift.normalized), Color.green);
+            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Drag.normalized), Color.red);
+            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector((Lift + Drag).normalized), Color.yellow);
         }
     }
 
-    //public float GetAngleOfAttack()
-    //{
-    //    // Calculate Dynamics
-    //    Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
+    public float GetAngleOfAttack()
+    {
+        // Calculate Dynamics
+        Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
 
-    //    Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetRelativePointVelocity(transform.localPosition)); // Velocity of the parent's rigidbody at this position
-    //    Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
-    //    float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
+        Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetRelativePointVelocity(transform.localPosition)); // Velocity of the parent's rigidbody at this position
+        Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
+        float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
 
-    //    return angleOfAttack;
-    //}
+        return angleOfAttack;
+    }
 }
