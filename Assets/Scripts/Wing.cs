@@ -158,16 +158,16 @@ public class Wing : MonoBehaviour
         float Clmax = (stallAngle + modAttack) * liftCurveGradient;
         if (Mathf.Abs(angleOfAttack) > stallAngle)
         {
-            // Stalled
+            // Stalled Lift
             Cl = 0f;
-            Cd = Mathf.Clamp(9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f), 0f, 2f);
         }
         else
         {
-            // Nominal
+            // Nominal Lift
             Cl = (angleOfAttack + modAttack) * liftCurveGradient;
-            Cd = Mathf.Clamp(9f * Mathf.Abs(Cl) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f), 0f, 2f);
         }
+        // Drag
+        Cd = Mathf.Clamp(9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f), 0f, 2f);
 
         return new float[] { Cl, Cd };
     }
@@ -195,12 +195,12 @@ public class Wing : MonoBehaviour
 
 
         // -- Calculate Dynamics --
-        float trailFlapCoP = MaxTrailFlapAngle > 0f ? 0.25f * trailFlapControl : 0f;
+        float trailFlapCoP = MaxTrailFlapAngle > 0f ? 0.25f * -trailFlapControl : 0f;
         CentreOfPressure = CalculateCoP(0.25f + trailFlapCoP);
 
         Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
 
-        Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetRelativePointVelocity(transform.localPosition + CentreOfPressure)); // Velocity of the parent's rigidbody at this position
+        Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetPointVelocity(transform.TransformPoint(CentreOfPressure))); // Velocity of the parent's rigidbody at this position
         Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
         float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
         float modAttack = -ZeroLiftAngle * Mathf.Deg2Rad - trailFlapControl * MaxTrailFlapAngle * Mathf.Deg2Rad / 2f; // Flapped control is half to match trends from graphs
@@ -213,7 +213,7 @@ public class Wing : MonoBehaviour
 
         // Drag
         Vector3 dragDir = -localVelocity.normalized;
-        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * (FrontalArea + PlanformArea * Mathf.Sin(angleOfAttack)) * ClCd[1] * dragDir; // Should this act perpendicular to leading edge? Don't think so
+        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * (FrontalArea + PlanformArea * Mathf.Sin(Mathf.Abs(angleOfAttack))) * ClCd[1] * dragDir; // Should this act perpendicular to leading edge? Don't think so
 
 
         // -- Apply Force --
@@ -225,8 +225,9 @@ public class Wing : MonoBehaviour
         {
             //Debug.Log("Local Forward = " + localForward);
             //Debug.Log("Lifting Velocity = " + liftingVelocity);
+            Debug.Log("Local Velocity = " + localVelocity);
             //Debug.Log("Angle of Attack = " + angleOfAttack * Mathf.Rad2Deg);
-            Debug.Log("Cl = " + ClCd[0] + ", Cd = " + ClCd[1]);
+            //Debug.Log("Cl = " + ClCd[0] + ", Cd = " + ClCd[1]);
             //Debug.Log("Lift = " + Lift + ", Drag = " + Drag);
             //Debug.Log("Lift dir = " + liftDir + ", Drag dir = " + dragDir);
             //Debug.DrawRay(transform.TransformPoint(WingMesh.bounds.center), transform.TransformDirection(Vector3.up));
@@ -245,9 +246,10 @@ public class Wing : MonoBehaviour
     {
         if (_debug)
         {
-            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Lift.normalized), Color.green);
-            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Drag.normalized), Color.red);
-            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector((Lift + Drag).normalized), Color.yellow);
+            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Lift / 10f), Color.green);
+            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(Drag / 10f), Color.red);
+            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector((Lift + Drag) / 10f), Color.yellow);
+            Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(transform.InverseTransformVector(dynamics.rb.GetPointVelocity(transform.TransformPoint(CentreOfPressure)))), Color.cyan);
         }
     }
 

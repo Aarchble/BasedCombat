@@ -30,6 +30,7 @@ public class AircraftDynamics : MonoBehaviour
 
         rb.inertiaTensor = new Vector3((Height * Height + Length * Length) * rb.mass / 12f, (WingSpan * WingSpan + Length * Length) * rb.mass / 12f, (Height * Height + WingSpan * WingSpan) * rb.mass / 12f);
         rb.velocity = new Vector3(0f, 0f, _velocity);
+        rb.angularVelocity = new Vector3(0f, 0f, 0.1f);
 
         for (int i = 0; i < Wings.Count; i++)
         {
@@ -46,7 +47,7 @@ public class AircraftDynamics : MonoBehaviour
             }
         }
 
-        rb.centerOfMass = Vector3.zero;
+        rb.centerOfMass = Vector3.forward * -0.5f;
     }
 
     private void FixedUpdate()
@@ -64,13 +65,17 @@ public class AircraftDynamics : MonoBehaviour
         {
             Wing wing = Wings[i].GetComponent<Wing>();
 
-            float inverterPitch = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.back) > 0f ? 1f : -1f;
-            float inverterRoll = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.right) > 0f ? 1f : -1f;
-            float inverterYaw = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.back) > 0f ? 1f : -1f;
+            //float inverterPitch = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.back) > 0f ? 1f : -1f;
+            //float inverterRoll = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.right) > 0f ? 1f : -1f;
+            //float inverterYaw = Vector3.Dot(wing.transform.localPosition + wing.CentreOfPressure, Vector3.back) > 0f ? 1f : -1f;
 
-            float resultantPitchInput = fcs.PitchInceptor * wing.PitchContribution * inverterPitch; //Vector3.Dot(Vector3.right, transform.InverseTransformVector(wing.transform.right))
-            float resultantRollInput = fcs.RollInceptor * wing.RollContribution * inverterRoll;
-            float resultantYawInput = fcs.YawInceptor * wing.YawContribution * inverterYaw; //Vector3.Dot(Vector3.up, transform.InverseTransformVector(wing.transform.right))
+            //float resultantPitchInput = fcs.PitchInceptor * wing.PitchContribution * inverterPitch; //Vector3.Dot(Vector3.right, transform.InverseTransformVector(wing.transform.right))
+            //float resultantRollInput = fcs.RollInceptor * wing.RollContribution * inverterRoll;
+            //float resultantYawInput = fcs.YawInceptor * wing.YawContribution * inverterYaw; //Vector3.Dot(Vector3.up, transform.InverseTransformVector(wing.transform.right))
+
+            float resultantPitchInput = fcs.PitchInceptor * wing.PitchContribution; //Vector3.Dot(Vector3.right, transform.InverseTransformVector(wing.transform.right))
+            float resultantRollInput = fcs.RollInceptor * wing.RollContribution;
+            float resultantYawInput = fcs.YawInceptor * wing.YawContribution; //Vector3.Dot(Vector3.up, transform.InverseTransformVector(wing.transform.right))
 
             float InputSum = resultantPitchInput + resultantRollInput + resultantYawInput;
 
