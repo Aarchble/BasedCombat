@@ -79,6 +79,7 @@ public class Wing : MonoBehaviour
             Vector3 trailingTip = leadingTip + new Vector3(0f, 0f, -TipChord);
             WingMesh.vertices = new Vector3[] { chordShift, leadingTip + chordShift, trailingTip + chordShift, trailingRoot + chordShift };
             WingMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
+            WingMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
             PlanformArea = (Vector3.Cross(leadingTip, trailingTip).magnitude + Vector3.Cross(trailingTip, trailingRoot).magnitude) / 2f;
             FrontalArea = (RootChord * WingThickness + TipChord * WingThickness) * WingSpan * 0.5f;
             Volume = WingSpan * (RootChord * TipChord * WingThickness + TipChord * RootChord * WingThickness + 2f * (TipChord * TipChord * WingThickness + RootChord * RootChord * WingThickness)) / 6f;
@@ -88,6 +89,7 @@ public class Wing : MonoBehaviour
             // Triangular Wing
             WingMesh.vertices = new Vector3[] { chordShift, leadingTip + chordShift, trailingRoot + chordShift };
             WingMesh.triangles = new int[] { 0, 1, 2 };
+            WingMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up };
             PlanformArea = Vector3.Cross(leadingTip, trailingRoot).magnitude / 2f;
             FrontalArea = (RootChord * WingThickness + TipChord * WingThickness) * WingSpan * 0.5f;
             Volume = WingSpan * (RootChord * TipChord * WingThickness + TipChord * RootChord * WingThickness + 2f * (TipChord * TipChord * WingThickness + RootChord * RootChord * WingThickness)) / 6f;
@@ -104,6 +106,7 @@ public class Wing : MonoBehaviour
             TrailFlapMesh = new();
             TrailFlapMesh.vertices = new Vector3[] { Vector3.zero, WingMesh.vertices[^2] - WingMesh.vertices[^1], WingMesh.vertices[^2] - WingMesh.vertices[^1] + new Vector3(0f, 0f, -TrailFlapChord), new Vector3(0f, 0f, -TrailFlapChord) };
             TrailFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
+            TrailFlapMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
             PlanformArea += TrailFlapChord * WingSpan; // Add control surface to wing area
             TrailFlap = Instantiate(FlapPrefab, transform.TransformPoint(WingMesh.vertices[^1]), transform.rotation, transform);
             TrailFlap.GetComponent<MeshFilter>().mesh = TrailFlapMesh;
@@ -116,6 +119,7 @@ public class Wing : MonoBehaviour
             LeadFlapMesh = new();
             LeadFlapMesh.vertices = new Vector3[] { new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0] + new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0], Vector3.zero };
             LeadFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
+            LeadFlapMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
             PlanformArea += LeadFlapChord * WingSpan; // Add control surface to wing area
             LeadFlap = Instantiate(FlapPrefab, transform.TransformPoint(WingMesh.vertices[0]), transform.rotation, transform);
             LeadFlap.GetComponent<MeshFilter>().mesh = LeadFlapMesh;
@@ -141,7 +145,7 @@ public class Wing : MonoBehaviour
         if (transform.parent.TryGetComponent(out Wing parentWing))
         {
             Vector3 parentTip = parentWing.WingMesh.vertices[1];
-            transform.localPosition = new Vector3(parentTip.x, 0f, parentTip.z);
+            transform.localPosition = new Vector3(parentTip.x, 0f, parentTip.z); // Position sub-wing at parent wing tip
         }
     }
 
@@ -225,7 +229,7 @@ public class Wing : MonoBehaviour
         {
             //Debug.Log("Local Forward = " + localForward);
             //Debug.Log("Lifting Velocity = " + liftingVelocity);
-            Debug.Log("Local Velocity = " + localVelocity);
+            //Debug.Log("Local Velocity = " + localVelocity);
             //Debug.Log("Angle of Attack = " + angleOfAttack * Mathf.Rad2Deg);
             //Debug.Log("Cl = " + ClCd[0] + ", Cd = " + ClCd[1]);
             //Debug.Log("Lift = " + Lift + ", Drag = " + Drag);

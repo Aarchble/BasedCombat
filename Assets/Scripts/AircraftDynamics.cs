@@ -8,6 +8,7 @@ public class AircraftDynamics : MonoBehaviour
     public FlightControlInput fcs;
 
     private List<GameObject> Wings;
+    private List<GameObject> Engines;
 
     private float Length = 8f; // FIX ME
     private float WingSpan = 7f; // FIX ME
@@ -22,10 +23,18 @@ public class AircraftDynamics : MonoBehaviour
 
     private void Start()
     {
+        // Wings
         Wings = new();
         foreach (Wing wing in GetComponentsInChildren<Wing>()) // Get all wings attached to this aircraft
         {
             Wings.Add(wing.gameObject);
+        }
+
+        // Engines
+        Engines = new();
+        foreach (Engine engine in GetComponentsInChildren<Engine>()) // Get all wings attached to this aircraft
+        {
+            Engines.Add(engine.gameObject);
         }
 
         rb.inertiaTensor = new Vector3((Height * Height + Length * Length) * rb.mass / 12f, (WingSpan * WingSpan + Length * Length) * rb.mass / 12f, (Height * Height + WingSpan * WingSpan) * rb.mass / 12f);
@@ -90,16 +99,26 @@ public class AircraftDynamics : MonoBehaviour
 
     private void Update()
     {
+        for (int i = 0; i < Engines.Count; i++)
+        {
+            Engine engine = Engines[i].GetComponent<Engine>();
+            engine.UpdateNozzle(Throttle);
+        }
+
         // Debug
         for (int i = 0; i < Wings.Count; i++)
         {
             Wing wing = Wings[i].GetComponent<Wing>();
             wing.DebugForces();
+
+            //Debug.Log(transform.InverseTransformVector(rb.angularVelocity));
         }
 
         Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.up, Color.white);
         Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.down, Color.white);
         Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.left, Color.white);
         Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.right, Color.white);
+
+        Debug.Log(Throttle);
     }
 }
