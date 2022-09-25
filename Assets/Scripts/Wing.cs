@@ -48,6 +48,7 @@ public class Wing : MonoBehaviour
     private Quaternion LeadFlapRotationDatum;
     private float _combinedFlapChord;
     private float _spanFractionCoP;
+    private float FlapEffectiveness = 0.5f;
 
     // PRIVATE Wing Dynamics
     private Vector3 Lift;
@@ -150,17 +151,20 @@ public class Wing : MonoBehaviour
     }
 
 
-    private float[] LiftCoefficient(float angleOfAttack, float modAttack)
+    private float[] LiftCoefficient(float angleOfAttack, float trailFlapControl, float leadFlapControl)
     {
+        // Get slope and stall bounds
         float liftCurveMagnitude = Mathf.Sqrt(Mathf.Pow(1.5f, 2f) + Mathf.Pow(StallAngle, 2f)); // 1.5 at 15 degrees
-
         float liftCurveGradient = (-SweepAngle / 1250f + 0.1f) * Mathf.Rad2Deg;
         float stallAngle = liftCurveMagnitude * Mathf.Cos(Mathf.Atan(liftCurveGradient)); // Modified by vortex lift
+
+        // Get effective AoA
+        float modAttack = (-ZeroLiftAngle - FlapEffectiveness * (trailFlapControl * MaxTrailFlapAngle - leadFlapControl * MaxLeadFlapAngle)) * Mathf.Deg2Rad; // Flapped control is half to match trends from graphs
 
         float Cl;
         float Cd;
         float Clmax = (stallAngle + modAttack) * liftCurveGradient;
-        if (Mathf.Abs(angleOfAttack) > stallAngle)
+        if (Mathf.Abs(angleOfAttack - FlapEffectiveness * leadFlapControl * MaxLeadFlapAngle * Mathf.Deg2Rad) > stallAngle) // Check stall modified by leading edge flap deflection
         {
             // Stalled Lift
             Cl = 0f;
@@ -202,14 +206,13 @@ public class Wing : MonoBehaviour
         float trailFlapCoP = MaxTrailFlapAngle > 0f ? 0.25f * -trailFlapControl : 0f;
         CentreOfPressure = CalculateCoP(0.25f + trailFlapCoP);
 
+        // Localise velocity
         Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
-
         Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetPointVelocity(transform.TransformPoint(CentreOfPressure))); // Velocity of the parent's rigidbody at this position
         Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
         float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
-        float modAttack = -ZeroLiftAngle * Mathf.Deg2Rad - trailFlapControl * MaxTrailFlapAngle * Mathf.Deg2Rad / 2f; // Flapped control is half to match trends from graphs
 
-        float[] ClCd = LiftCoefficient(angleOfAttack, modAttack); // Lift : [0], Drag : [1]
+        float[] ClCd = LiftCoefficient(angleOfAttack, trailFlapControl, leadFlapControl); // Lift : [0], Drag : [1]
 
         // Lift
         Vector3 liftDir = switchLeftRight * -Vector3.Cross(-localVelocity, WingMesh.vertices[1] - WingMesh.vertices[0]).normalized;
