@@ -67,7 +67,9 @@ public class AircraftDynamics : MonoBehaviour
         float maxThrust = 15f * rb.mass;
         Throttle = Mathf.Clamp(Throttle + 0.5f * fcs.ThrottleInceptor * Time.fixedDeltaTime, 0f, 1f);
         rb.AddRelativeForce(maxThrust * Throttle * Vector3.forward);
-        
+
+        Vector3 Force = Vector3.zero;
+        Vector3 Moment = Vector3.zero;
 
         // -- Wings --
         for (int i = 0; i < Wings.Count; i++)
@@ -92,9 +94,13 @@ public class AircraftDynamics : MonoBehaviour
             float antiStallFlap = Mathf.Abs(wing.MaxTrailFlapAngle) > 0f ? -wing.GetAngleOfAttack() / wing.MaxTrailFlapAngle : 0f;
 
             wing.Operate(InputSum, InputSum, 0f, transform);
+            Force += wing.Force;
+            Moment += wing.Moment;
         }
 
-        
+        rb.AddRelativeForce(Force);
+        rb.AddRelativeTorque(Moment);
+        //Debug.Log(Force + "N, " + Moment + "Nm");
     }
 
     private void Update()
@@ -119,6 +125,6 @@ public class AircraftDynamics : MonoBehaviour
         Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.left, Color.white);
         Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.right, Color.white);
 
-        Debug.Log(Throttle);
+        //Debug.Log(Throttle);
     }
 }

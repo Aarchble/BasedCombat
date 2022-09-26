@@ -439,6 +439,14 @@ PrefabInstance:
       propertyPath: far clip plane
       value: 100000
       objectReference: {fileID: 0}
+    - target: {fileID: 967359615460346864, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: SweepAngle
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 967359615460346867, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1
+      objectReference: {fileID: 0}
     - target: {fileID: 967359615522579192, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
       propertyPath: m_AngularDrag
       value: 0
@@ -491,13 +499,45 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 1083437323093262361, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1083437323093262362, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: SweepAngle
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 1083437323332196945, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: SweepAngle
+      value: 40
+      objectReference: {fileID: 0}
     - target: {fileID: 1083437323332196945, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
       propertyPath: RollContribution
       value: -1
       objectReference: {fileID: 0}
+    - target: {fileID: 1083437323332196946, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1083437323513415210, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: SweepAngle
+      value: 40
+      objectReference: {fileID: 0}
     - target: {fileID: 1083437323513415210, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
       propertyPath: RollContribution
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1083437323770735125, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: SweepAngle
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 1083437323770735126, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1083437323853452059, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}
+      propertyPath: SweepAngle
+      value: 40
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b8ee895333e5f2849ac96819296d3a7f, type: 3}

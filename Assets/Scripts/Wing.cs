@@ -26,7 +26,6 @@ public class Wing : MonoBehaviour
     public float MaxLeadFlapAngle;
     public float StallAngle { get; private set; } = 15f * Mathf.Deg2Rad;
     public GameObject FlapPrefab;
-    public Vector3 CentreOfPressure { get; private set; }
     public float PitchContribution;
     public float RollContribution;
     public float YawContribution;
@@ -53,6 +52,11 @@ public class Wing : MonoBehaviour
     // PRIVATE Wing Dynamics
     private Vector3 Lift;
     private Vector3 Drag;
+
+    // PUBLIC Wing Dynamics
+    public Vector3 Force { get; private set; }
+    public Vector3 Moment { get; private set; }
+    public Vector3 CentreOfPressure { get; private set; }
 
     public bool _debug;
 
@@ -224,7 +228,8 @@ public class Wing : MonoBehaviour
 
 
         // -- Apply Force --
-        dynamics.rb.AddForceAtPosition(transform.TransformVector(Lift + Drag), transform.TransformPoint(CentreOfPressure)); // drag is causing the simulation to *depart*
+        Force = dynamics.rb.transform.InverseTransformVector(transform.TransformVector(Lift + Drag)); // Force local to vehicle
+        Moment = Vector3.Cross(dynamics.rb.transform.InverseTransformPoint(transform.TransformPoint(CentreOfPressure)), Force); // Moment local to vehicle
 
 
         // DEBUG
