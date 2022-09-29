@@ -16,10 +16,14 @@ public class AircraftDynamics : MonoBehaviour
     private float Throttle = 0f;
 
     public float Density = 1.225f;
+    public float GravitationAcceleration = 9.81f;
     public float BackMaxMomentArm { get; private set; } = 0f;
     public float RightMaxMomentArm { get; private set; } = 0f;
 
     public float _velocity;
+
+    private Vector3 Force;
+    private Vector3 Moment;
 
     private void Start()
     {
@@ -62,14 +66,18 @@ public class AircraftDynamics : MonoBehaviour
     private void FixedUpdate()
     {
         //Debug.Log("Pitch = " + fcs.pitchInceptor + ", Roll = " + fcs.rollInceptor + ", Yaw = " + fcs.yawInceptor);
+        Vector3 Weight = rb.mass * GravitationAcceleration * transform.InverseTransformVector(Vector3.down);
+
+        Force = Vector3.zero;
+        Moment = Vector3.zero;
 
         // -- Thrust --
         float maxThrust = 15f * rb.mass;
         Throttle = Mathf.Clamp(Throttle + 0.5f * fcs.ThrottleInceptor * Time.fixedDeltaTime, 0f, 1f);
-        rb.AddRelativeForce(maxThrust * Throttle * Vector3.forward);
+        Vector3 Thrust = maxThrust * Throttle * Vector3.forward;
 
-        Vector3 Force = Vector3.zero;
-        Vector3 Moment = Vector3.zero;
+        Force += Thrust + Weight;
+
 
         // -- Wings --
         for (int i = 0; i < Wings.Count; i++)
@@ -98,9 +106,11 @@ public class AircraftDynamics : MonoBehaviour
             Moment += wing.Moment;
         }
 
+
         rb.AddRelativeForce(Force);
         rb.AddRelativeTorque(Moment);
         //Debug.Log(Force + "N, " + Moment + "Nm");
+        Debug.Log(Force.magnitude / rb.mass / GravitationAcceleration);
     }
 
     private void Update()
@@ -120,10 +130,13 @@ public class AircraftDynamics : MonoBehaviour
             //Debug.Log(transform.InverseTransformVector(rb.angularVelocity));
         }
 
-        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.up, Color.white);
-        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.down, Color.white);
-        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.left, Color.white);
-        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.right, Color.white);
+        // Centre of Mass
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.up, Color.yellow);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.down, Color.black);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.left, Color.black);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.right, Color.yellow);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.forward, Color.yellow);
+        Debug.DrawRay(transform.TransformPoint(rb.centerOfMass), Vector3.back, Color.black);
 
         //Debug.Log(Throttle);
     }

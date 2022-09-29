@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.VFX;
 
 public class Engine : MonoBehaviour
 {
     MeshFilter meshFilter;
+    VisualEffect exhaust;
 
     CylinderMesh NacelleMesh;
     CylinderMesh NozzleExternalMesh;
@@ -26,6 +28,7 @@ public class Engine : MonoBehaviour
     private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
+        exhaust = GetComponent<VisualEffect>();
 
         // Nacelle
         NacelleMesh = new(Diameter, Diameter, 0f, EngineLength, CircleSegments);
@@ -59,6 +62,9 @@ public class Engine : MonoBehaviour
         NozzleExternalMesh.Resize(Diameter, nozDiameter, 0f, -NozzleLength);
         NozzleInternalLeadMesh.Resize(Diameter, MinNozDiameter, 0f, -NozzleLength / 2f);
         NozzleInternalTrailMesh.Resize(MinNozDiameter, nozDiameter, -NozzleLength / 2f, -NozzleLength);
+
+        exhaust.SetFloat("Size", nozDiameter);
+        exhaust.SetVector3("Position", new Vector3(0f, 0f, -NozzleLength * NozzleThroatPos));
     }
 
 }
