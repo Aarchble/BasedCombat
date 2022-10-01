@@ -62,6 +62,7 @@ MonoBehaviour:
   PitchContribution: 0
   RollContribution: 0
   YawContribution: 0
+  TipVortexPrefab: {fileID: 7346554652864215860, guid: 16306ecf22d7a2d499664db0287b428c, type: 3}
   _debug: 0
 --- !u!33 &172795884441632396
 MeshFilter:

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.VFX;
 
 public class Wing : MonoBehaviour
 {
@@ -57,6 +58,11 @@ public class Wing : MonoBehaviour
     public Vector3 Force { get; private set; }
     public Vector3 Moment { get; private set; }
     public Vector3 CentreOfPressure { get; private set; }
+
+    // PUBLIC Graphics and Visualisation
+    public GameObject TipVortexPrefab;
+    private GameObject TipVortex;
+    private VisualEffect TipVortexVFX;
 
     public bool _debug;
 
@@ -135,6 +141,12 @@ public class Wing : MonoBehaviour
         // -- Centre of Pressure --
         _combinedFlapChord = TrailFlapChord + LeadFlapChord;
         _spanFractionCoP = (2f * (TipChord + _combinedFlapChord) + RootChord + _combinedFlapChord) / (3f * (TipChord + RootChord + 2f * _combinedFlapChord)); // Uncluttered Formula: (2f * TipChord + RootChord) / (3f * (TipChord + RootChord))
+
+
+        // -- Vortices --
+        TipVortex = Instantiate(TipVortexPrefab, transform.TransformPoint(WingMesh.vertices[^2]), transform.rotation, transform);
+        TipVortexVFX = TipVortex.GetComponent<VisualEffect>();
+        TipVortexVFX.SetFloat("Mirror", switchLeftRight);
 
 
         if (_debug)
@@ -232,6 +244,17 @@ public class Wing : MonoBehaviour
         Moment = Vector3.Cross(dynamics.rb.transform.InverseTransformPoint(transform.TransformPoint(CentreOfPressure)), Force); // Moment local to vehicle
 
 
+        // -- Drag Vortices --
+        if (Lift.magnitude > 0.5f * dynamics.rb.mass * dynamics.GravitationAcceleration)
+        {
+            TipVortexVFX.SetInt("SpawnRate", 256);
+        }
+        else
+        {
+            TipVortexVFX.SetInt("SpawnRate", 0);
+        }
+
+
         // DEBUG
         if (_debug)
         {
@@ -249,10 +272,12 @@ public class Wing : MonoBehaviour
         }
     }
 
+
     private Vector3 CalculateCoP(float chordFractionCoP)
     {
         return Vector3.Lerp(WingMesh.vertices[0] - new Vector3(0f, 0f, chordFractionCoP * (RootChord + _combinedFlapChord) - LeadFlapChord), WingMesh.vertices[1] - new Vector3(0f, 0f, chordFractionCoP * (TipChord + _combinedFlapChord) - LeadFlapChord), _spanFractionCoP);
     }
+
 
     public void DebugForces()
     {
@@ -264,6 +289,7 @@ public class Wing : MonoBehaviour
             Debug.DrawRay(transform.TransformPoint(CentreOfPressure), transform.TransformVector(transform.InverseTransformVector(dynamics.rb.GetPointVelocity(transform.TransformPoint(CentreOfPressure)))), Color.cyan);
         }
     }
+
 
     public float GetAngleOfAttack()
     {

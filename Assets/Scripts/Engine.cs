@@ -64,7 +64,7 @@ public class Engine : MonoBehaviour
         NozzleInternalTrailMesh.Resize(MinNozDiameter, nozDiameter, -NozzleLength / 2f, -NozzleLength);
 
         exhaust.SetFloat("Size", nozDiameter);
-        exhaust.SetVector3("Position", new Vector3(0f, 0f, -NozzleLength * NozzleThroatPos));
+        exhaust.SetVector3("Position", new Vector3(0f, 0f, -NozzleLength * NozzleLength));
     }
 
 }

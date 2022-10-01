@@ -408,7 +408,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: MaxRotation
-      value: 15
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: RollContribution
@@ -1037,7 +1037,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: MaxRotation
-      value: 15
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 172795884441632394, guid: 0246b544173565f4cb0a4f3e4b5fdb48, type: 3}
       propertyPath: RollContribution
@@ -1346,6 +1346,15 @@ VisualEffect:
       m_Array:
       - m_Value: 0.2
         m_Name: DistortionScale
+        m_Overridden: 1
+      - m_Value: 4
+        m_Name: ExhaustSpeed
+        m_Overridden: 1
+      - m_Value: 2
+        m_Name: SizeIncrease
+        m_Overridden: 1
+      - m_Value: 3
+        m_Name: ExhaustLifetime
         m_Overridden: 1
     m_Vector2f:
       m_Array: []
