@@ -110,7 +110,7 @@ public class AircraftDynamics : MonoBehaviour
         rb.AddRelativeForce(Force);
         rb.AddRelativeTorque(Moment);
         //Debug.Log(Force + "N, " + Moment + "Nm");
-        Debug.Log(Force.magnitude / rb.mass / GravitationAcceleration);
+        //Debug.Log(Force.magnitude / rb.mass / GravitationAcceleration);
     }
 
     private void Update()
@@ -125,6 +125,7 @@ public class AircraftDynamics : MonoBehaviour
         for (int i = 0; i < Wings.Count; i++)
         {
             Wing wing = Wings[i].GetComponent<Wing>();
+            wing.OperateVisuals();
             wing.DebugForces();
 
             //Debug.Log(transform.InverseTransformVector(rb.angularVelocity));

@@ -13,7 +13,8 @@ public class CylinderMesh
 
         Vector3[] vertices = new Vector3[CircPoints * 2];
         int[] triangles = new int[vertices.Length * 3];
-        Vector3[] normals = new Vector3[CircPoints * 2];
+        Vector3[] normals = new Vector3[vertices.Length];
+        Vector2[] uvs = new Vector2[vertices.Length];
 
         for (int i = 0; i < CircPoints; i++)
         {
@@ -22,6 +23,7 @@ public class CylinderMesh
             // Front circle
             vertices[i] = new Vector3(d0 / 2f * Mathf.Cos(angle), d0 / 2f * Mathf.Sin(angle), z0); // vertex
             normals[i] = vertices[i].normalized;
+            uvs[i] = new Vector2(i / (CircPoints - 1), 0f);
             triangles[3 * i] = i;
             triangles[3 * i + 1] = i + CircPoints;
             triangles[3 * i + 2] = i < CircPoints - 1 ? i + 1 : 0; // Return to 0th front circle vertex
@@ -29,6 +31,7 @@ public class CylinderMesh
             // Rear Circle
             vertices[i + CircPoints] = new Vector3(d1 / 2f * Mathf.Cos(angle), d1 / 2f * Mathf.Sin(angle), z1); // vertex
             normals[i + CircPoints] = vertices[i].normalized;
+            uvs[i + CircPoints] = new Vector2(i / (CircPoints - 1), 1f);
             triangles[3 * (i + CircPoints)] = i + CircPoints;
             triangles[3 * (i + CircPoints) + 1] = i < CircPoints - 1 ? i + CircPoints + 1 : CircPoints; // Return to 0th rear circle vertex
             triangles[3 * (i + CircPoints) + 2] = i < CircPoints - 1 ? i + 1 : 0; // Return to 0th front circle vertex

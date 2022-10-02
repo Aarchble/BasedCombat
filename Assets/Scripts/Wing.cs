@@ -25,7 +25,6 @@ public class Wing : MonoBehaviour
     public float MaxRotation;
     public float MaxTrailFlapAngle;
     public float MaxLeadFlapAngle;
-    public float StallAngle { get; private set; } = 15f * Mathf.Deg2Rad;
     public GameObject FlapPrefab;
     public float PitchContribution;
     public float RollContribution;
@@ -53,16 +52,21 @@ public class Wing : MonoBehaviour
     // PRIVATE Wing Dynamics
     private Vector3 Lift;
     private Vector3 Drag;
+    private float AngleOfAttack;
+    private float StallAngle;
 
     // PUBLIC Wing Dynamics
     public Vector3 Force { get; private set; }
     public Vector3 Moment { get; private set; }
     public Vector3 CentreOfPressure { get; private set; }
 
-    // PUBLIC Graphics and Visualisation
+    // Graphics and Visualisation
     public GameObject TipVortexPrefab;
     private GameObject TipVortex;
     private VisualEffect TipVortexVFX;
+    public GameObject LeadingEdgeVortexPrefab;
+    private GameObject LeadingEdgeVortex;
+    private VisualEffect LeadingEdgeVortexVFX;
 
     public bool _debug;
 
@@ -91,6 +95,7 @@ public class Wing : MonoBehaviour
             WingMesh.vertices = new Vector3[] { chordShift, leadingTip + chordShift, trailingTip + chordShift, trailingRoot + chordShift };
             WingMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             WingMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
+            WingMesh.uv = new Vector2[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.up };
             PlanformArea = (Vector3.Cross(leadingTip, trailingTip).magnitude + Vector3.Cross(trailingTip, trailingRoot).magnitude) / 2f;
             FrontalArea = (RootChord * WingThickness + TipChord * WingThickness) * WingSpan * 0.5f;
             Volume = WingSpan * (RootChord * TipChord * WingThickness + TipChord * RootChord * WingThickness + 2f * (TipChord * TipChord * WingThickness + RootChord * RootChord * WingThickness)) / 6f;
@@ -101,6 +106,7 @@ public class Wing : MonoBehaviour
             WingMesh.vertices = new Vector3[] { chordShift, leadingTip + chordShift, trailingRoot + chordShift };
             WingMesh.triangles = new int[] { 0, 1, 2 };
             WingMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up };
+            WingMesh.uv = new Vector2[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.up };
             PlanformArea = Vector3.Cross(leadingTip, trailingRoot).magnitude / 2f;
             FrontalArea = (RootChord * WingThickness + TipChord * WingThickness) * WingSpan * 0.5f;
             Volume = WingSpan * (RootChord * TipChord * WingThickness + TipChord * RootChord * WingThickness + 2f * (TipChord * TipChord * WingThickness + RootChord * RootChord * WingThickness)) / 6f;
@@ -118,6 +124,7 @@ public class Wing : MonoBehaviour
             TrailFlapMesh.vertices = new Vector3[] { Vector3.zero, WingMesh.vertices[^2] - WingMesh.vertices[^1], WingMesh.vertices[^2] - WingMesh.vertices[^1] + new Vector3(0f, 0f, -TrailFlapChord), new Vector3(0f, 0f, -TrailFlapChord) };
             TrailFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             TrailFlapMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
+            TrailFlapMesh.uv = new Vector2[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.up };
             PlanformArea += TrailFlapChord * WingSpan; // Add control surface to wing area
             TrailFlap = Instantiate(FlapPrefab, transform.TransformPoint(WingMesh.vertices[^1]), transform.rotation, transform);
             TrailFlap.GetComponent<MeshFilter>().mesh = TrailFlapMesh;
@@ -131,6 +138,7 @@ public class Wing : MonoBehaviour
             LeadFlapMesh.vertices = new Vector3[] { new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0] + new Vector3(0f, 0f, LeadFlapChord), WingMesh.vertices[1] - WingMesh.vertices[0], Vector3.zero };
             LeadFlapMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
             LeadFlapMesh.normals = new Vector3[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
+            LeadFlapMesh.uv = new Vector2[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.up };
             PlanformArea += LeadFlapChord * WingSpan; // Add control surface to wing area
             LeadFlap = Instantiate(FlapPrefab, transform.TransformPoint(WingMesh.vertices[0]), transform.rotation, transform);
             LeadFlap.GetComponent<MeshFilter>().mesh = LeadFlapMesh;
@@ -147,6 +155,10 @@ public class Wing : MonoBehaviour
         TipVortex = Instantiate(TipVortexPrefab, transform.TransformPoint(WingMesh.vertices[^2]), transform.rotation, transform);
         TipVortexVFX = TipVortex.GetComponent<VisualEffect>();
         TipVortexVFX.SetFloat("Mirror", switchLeftRight);
+
+        LeadingEdgeVortex = Instantiate(LeadingEdgeVortexPrefab, transform.TransformPoint(WingMesh.vertices[0]), Quaternion.LookRotation(transform.TransformVector((WingMesh.vertices[0] - WingMesh.vertices[1]).normalized), transform.TransformVector(Vector3.up)), transform);
+        LeadingEdgeVortexVFX = LeadingEdgeVortex.GetComponent<VisualEffect>();
+        LeadingEdgeVortexVFX.SetFloat("Mirror", switchLeftRight);
 
 
         if (_debug)
@@ -167,20 +179,20 @@ public class Wing : MonoBehaviour
     }
 
 
-    private float[] LiftCoefficient(float angleOfAttack, float trailFlapControl, float leadFlapControl)
+    private float[] LiftCoefficient(float trailFlapControl, float leadFlapControl)
     {
         // Get slope and stall bounds
-        float liftCurveMagnitude = Mathf.Sqrt(Mathf.Pow(1.5f, 2f) + Mathf.Pow(StallAngle, 2f)); // 1.5 at 15 degrees
+        float liftCurveMagnitude = Mathf.Sqrt(Mathf.Pow(1.5f, 2f) + Mathf.Pow(15f * Mathf.Deg2Rad, 2f)); // 1.5 at 15 degrees
         float liftCurveGradient = (-SweepAngle / 1250f + 0.1f) * Mathf.Rad2Deg;
-        float stallAngle = liftCurveMagnitude * Mathf.Cos(Mathf.Atan(liftCurveGradient)); // Modified by vortex lift
+        StallAngle = liftCurveMagnitude * Mathf.Cos(Mathf.Atan(liftCurveGradient)); // Modified by vortex lift
 
         // Get effective AoA
         float modAttack = (-ZeroLiftAngle - FlapEffectiveness * (trailFlapControl * MaxTrailFlapAngle - leadFlapControl * MaxLeadFlapAngle)) * Mathf.Deg2Rad; // Flapped control is half to match trends from graphs
 
         float Cl;
         float Cd;
-        float Clmax = (stallAngle + modAttack) * liftCurveGradient;
-        if (Mathf.Abs(angleOfAttack - FlapEffectiveness * leadFlapControl * MaxLeadFlapAngle * Mathf.Deg2Rad) > stallAngle) // Check stall modified by leading edge flap deflection
+        float Clmax = (StallAngle + modAttack) * liftCurveGradient;
+        if (Mathf.Abs(AngleOfAttack - FlapEffectiveness * leadFlapControl * MaxLeadFlapAngle * Mathf.Deg2Rad) > StallAngle) // Check stall modified by leading edge flap deflection
         {
             // Stalled Lift
             Cl = 0f;
@@ -188,32 +200,53 @@ public class Wing : MonoBehaviour
         else
         {
             // Nominal Lift
-            Cl = (angleOfAttack + modAttack) * liftCurveGradient;
+            Cl = (AngleOfAttack + modAttack) * liftCurveGradient;
         }
         // Drag
-        Cd = Mathf.Clamp(9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(angleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f), 0f, 2f);
+        Cd = Mathf.Clamp(9f * Mathf.Abs(Clmax) / 100f * (20736f / Mathf.Pow(Mathf.PI, 4f)) * Mathf.Pow(AngleOfAttack + modAttack, 4f) + (Mathf.Abs(Clmax) / 100f), 0f, 2f);
 
         return new float[] { Cl, Cd };
     }
 
 
+    private float[] ControlAngles(float wingControl, float trailFlapControl, float leadFlapControl)
+    {
+        // Return the flight control inputs as deflection angles in DEGREES (for Q.AngleAxis())
+        float[] control = new float[3];
+
+        float stallDelayedAoA = AngleOfAttack - FlapEffectiveness * leadFlapControl * MaxLeadFlapAngle * Mathf.Deg2Rad;
+        float stallTolerance = 0.9f;
+
+        control[0] = Mathf.Clamp(wingControl * MaxRotation, -StallAngle * stallTolerance * Mathf.Rad2Deg, StallAngle * stallTolerance * Mathf.Rad2Deg);
+        control[1] = trailFlapControl * MaxTrailFlapAngle;
+        control[2] = AngleOfAttack / FlapEffectiveness * Mathf.Rad2Deg;
+        
+
+        return control;
+    }
+
+
     public void Operate(float wingControl, float trailFlapControl, float leadFlapControl, Transform playerTransform) //incidenceControl and zeroLiftControl are in degrees
     {
+        // -- Control --
+        float[] filteredControls = ControlAngles(wingControl, trailFlapControl, leadFlapControl);
+
+
         // -- Update Control Surface Orientation --
         // Wing
         //Quaternion rotation = new(Mathf.Sin(incidenceControl / 2f), 0f, 0f, Mathf.Cos(incidenceControl / 2f));
-        Quaternion rotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * wingControl * MaxRotation, -MaxRotation, MaxRotation), switchLeftRight * playerTransform.InverseTransformVector(transform.right)); // rotation vector points from root to tip and is normal to chordline
+        Quaternion rotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * filteredControls[0], -MaxRotation, MaxRotation), switchLeftRight * playerTransform.InverseTransformVector(transform.right)); // rotation vector points from root to tip and is normal to chordline
         transform.localRotation = rotation * rotationDatum; // this is doing q*p*q^-1
         
         // Flaps
         if (TrailFlap != null)
         {
-            Quaternion trailFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * trailFlapControl * MaxTrailFlapAngle, -MaxTrailFlapAngle, MaxTrailFlapAngle), WingMesh.vertices[^2] - WingMesh.vertices[^1]);
+            Quaternion trailFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * filteredControls[1], -MaxTrailFlapAngle, MaxTrailFlapAngle), WingMesh.vertices[^2] - WingMesh.vertices[^1]);
             TrailFlap.transform.localRotation = trailFlapRotation * TrailFlapRotationDatum;
         }
         if (LeadFlap != null)
         {
-            Quaternion leadFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * leadFlapControl * MaxLeadFlapAngle, -MaxLeadFlapAngle, MaxLeadFlapAngle), WingMesh.vertices[1] - WingMesh.vertices[0]);
+            Quaternion leadFlapRotation = Quaternion.AngleAxis(Mathf.Clamp(switchLeftRight * filteredControls[2], -MaxLeadFlapAngle, MaxLeadFlapAngle), WingMesh.vertices[1] - WingMesh.vertices[0]);
             LeadFlap.transform.localRotation = leadFlapRotation * LeadFlapRotationDatum;
         }
 
@@ -226,9 +259,9 @@ public class Wing : MonoBehaviour
         Vector3 localForward = new Vector3(Mathf.Sin(switchLeftRight * SweepAngle * Mathf.Deg2Rad), 0f, Mathf.Cos(switchLeftRight * SweepAngle * Mathf.Deg2Rad));
         Vector3 localVelocity = transform.InverseTransformVector(dynamics.rb.GetPointVelocity(transform.TransformPoint(CentreOfPressure))); // Velocity of the parent's rigidbody at this position
         Vector2 liftingVelocity = new Vector2(Vector3.Dot(localForward, localVelocity), Vector3.Dot(Vector3.up, localVelocity)); // exclude velocity parallel to leading edge
-        float angleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
+        AngleOfAttack = -Mathf.Atan2(liftingVelocity.y, liftingVelocity.x);
 
-        float[] ClCd = LiftCoefficient(angleOfAttack, trailFlapControl, leadFlapControl); // Lift : [0], Drag : [1]
+        float[] ClCd = LiftCoefficient(trailFlapControl, leadFlapControl); // Lift : [0], Drag : [1]
 
         // Lift
         Vector3 liftDir = switchLeftRight * -Vector3.Cross(-localVelocity, WingMesh.vertices[1] - WingMesh.vertices[0]).normalized;
@@ -236,23 +269,12 @@ public class Wing : MonoBehaviour
 
         // Drag
         Vector3 dragDir = -localVelocity.normalized;
-        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * (FrontalArea + PlanformArea * Mathf.Sin(Mathf.Abs(angleOfAttack))) * ClCd[1] * dragDir; // Should this act perpendicular to leading edge? Don't think so
+        Drag = 0.5f * dynamics.Density * Mathf.Pow(liftingVelocity.magnitude, 2f) * (FrontalArea + PlanformArea * Mathf.Sin(Mathf.Abs(AngleOfAttack))) * ClCd[1] * dragDir;
 
 
         // -- Apply Force --
         Force = dynamics.rb.transform.InverseTransformVector(transform.TransformVector(Lift + Drag)); // Force local to vehicle
         Moment = Vector3.Cross(dynamics.rb.transform.InverseTransformPoint(transform.TransformPoint(CentreOfPressure)), Force); // Moment local to vehicle
-
-
-        // -- Drag Vortices --
-        if (Lift.magnitude > 0.5f * dynamics.rb.mass * dynamics.GravitationAcceleration)
-        {
-            TipVortexVFX.SetInt("SpawnRate", 256);
-        }
-        else
-        {
-            TipVortexVFX.SetInt("SpawnRate", 0);
-        }
 
 
         // DEBUG
@@ -269,6 +291,22 @@ public class Wing : MonoBehaviour
             //Debug.Log(rotation + ", " + (rotation * rotationDatum * Quaternion.Inverse(rotation)));
             //Debug.Log(leadFlapControl);
             //Debug.Log(Mathf.Abs(angleOfAttack - leadFlapControl * Mathf.Deg2Rad / 2f) * Mathf.Rad2Deg);
+        }
+    }
+
+
+    public void OperateVisuals()
+    {
+        // -- Drag Vortices --
+        if (Lift.magnitude > 1f * dynamics.rb.mass * dynamics.GravitationAcceleration)
+        {
+            TipVortexVFX.SetInt("SpawnRate", 256);
+            LeadingEdgeVortexVFX.SetInt("SpawnRate", 256);
+        }
+        else
+        {
+            TipVortexVFX.SetInt("SpawnRate", 0);
+            LeadingEdgeVortexVFX.SetInt("SpawnRate", 0);
         }
     }
 

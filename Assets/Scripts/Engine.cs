@@ -51,12 +51,16 @@ public class Engine : MonoBehaviour
     public void UpdateNozzle(float throttle)
     {
         float threshold = 0.7f;
-        float nozDiameter = MinNozDiameter;
+        float nozDiameter;
 
         if (throttle > threshold)
         {
             // Afterburner
             nozDiameter = Mathf.Lerp(MinNozDiameter, Diameter, (throttle - threshold) / (1f - threshold));
+        }
+        else
+        {
+            nozDiameter = Mathf.Lerp(Diameter, MinNozDiameter, throttle / threshold);
         }
 
         NozzleExternalMesh.Resize(Diameter, nozDiameter, 0f, -NozzleLength);
